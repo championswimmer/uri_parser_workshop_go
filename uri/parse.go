@@ -122,8 +122,44 @@ func parseQuery(uriAfterPath string) (map[string]string, string, error) {
 	if !strings.HasPrefix(uriAfterPath, "?") {
 		return map[string]string{}, uriAfterPath, nil
 	}
-	// TODO: parse the query into a map
-	return map[string]string{}, uriAfterPath, nil
+
+	indexOfHash := strings.Index(uriAfterPath, "#")
+	if indexOfHash == -1 { // no fragment, but query
+		queryMap, err := convertQueryToMap(uriAfterPath[1:])
+		return queryMap, "", err
+	} else {
+		uriAfterQuery := uriAfterPath[indexOfHash:]
+		queryMap, err := convertQueryToMap(uriAfterPath[1:indexOfHash])
+		return queryMap, uriAfterQuery, err
+	}
+}
+
+func convertQueryToMap(query string) (map[string]string, error) {
+	queries := strings.Split(query, "&")
+	queryMap := make(map[string]string)
+	for _, query := range queries {
+		indexOfEqual := strings.Index(query, "=")
+		key := ""
+		value := ""
+		if indexOfEqual == -1 { // no = sign, hence no value
+			key = query
+		} else {
+			key = query[:indexOfEqual]
+			value = query[indexOfEqual+1:]
+		}
+
+		if key == "" {
+			return nil, errors.New("URI has invalid query")
+		}
+
+		existingValue, containsKey := queryMap[key]
+		if containsKey {
+			queryMap[key] = existingValue + "," + value
+		} else {
+			queryMap[key] = value
+		}
+	}
+	return queryMap, nil
 }
 
 func parseFragment(uriAfterQuery string) (string, error) {
