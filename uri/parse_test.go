@@ -159,3 +159,75 @@ func TestParsePath(t *testing.T) {
 		assert.ErrorContains(t, err, "URI has invalid fragment or query")
 	})
 }
+
+func TestParseQuery(t *testing.T) {
+
+	t.Run("?query1=abc&query2&query3=&query1=#fragment", func(t *testing.T) {
+		queryMap, uriAfterQuery, err := parseQuery("?query1=abc&query2&query3=&query1=#fragment")
+
+		if err != nil {
+			t.Errorf("Error: %s", err)
+		}
+		if queryMap["query1"] != "abc," {
+			t.Errorf("Query1 value is not abc,: %s", queryMap["query1"])
+		}
+		if queryMap["query2"] != "" {
+			t.Errorf("Query2 value is not empty: %s", queryMap["query2"])
+		}
+		if queryMap["query3"] != "" {
+			t.Errorf("Query3 value is not empty: %s", queryMap["query3"])
+		}
+
+		if uriAfterQuery != "#fragment" {
+			t.Errorf("URI after query is not #fragment: %s", uriAfterQuery)
+		}
+	})
+
+	t.Run("#fragment", func(t *testing.T) {
+		_, uriAfterQuery, err := parseQuery("#fragment")
+
+		if err != nil {
+			t.Errorf("Error: %s", err)
+		}
+		if uriAfterQuery != "#fragment" {
+			t.Errorf("URI after query is not #fragment: %s", uriAfterQuery)
+		}
+	})
+
+	t.Run("?query1=abc", func(t *testing.T) {
+		queryMap, uriAfterQuery, err := parseQuery("?query1=abc")
+
+		if err != nil {
+			t.Errorf("Error: %s", err)
+		}
+		if queryMap["query1"] != "abc" {
+			t.Errorf("Query1 value is not abc: %s", queryMap["query1"])
+		}
+		if uriAfterQuery != "" {
+			t.Errorf("URI after query is not empty: %s", uriAfterQuery)
+		}
+	})
+
+	t.Run("?query1#fragment", func(t *testing.T) {
+		queryMap, uriAfterQuery, err := parseQuery("?query1#fragment")
+
+		if err != nil {
+			t.Errorf("Error: %s", err)
+		}
+		if queryMap["query1"] != "" {
+			t.Errorf("Query1 value is not empty: %s", queryMap["query1"])
+		}
+		if uriAfterQuery != "#fragment" {
+			t.Errorf("URI after query is not #fragment: %s", uriAfterQuery)
+		}
+	})
+
+	t.Run("invalid: ?query1&=", func(t *testing.T) {
+		_, _, err := parseQuery("?query1&=")
+
+		if err == nil {
+			t.Errorf("Error should not be nil")
+		}
+		assert.ErrorContains(t, err, "URI has invalid query")
+	})
+}
